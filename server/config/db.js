@@ -7,6 +7,7 @@
 const mysql = require('mysql2/promise');
 
 const requiredVariables = ['DB_HOST', 'DB_USER', 'DB_NAME'];
+const sslCa = process.env.DB_SSL_CA;
 
 try {
   const missingVariables = requiredVariables.filter(name => !process.env[name] || !process.env[name].trim());
@@ -27,7 +28,13 @@ const pool = mysql.createPool({
   port: Number(process.env.DB_PORT) || 3306,
   waitForConnections: true,
   connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 10,
-  queueLimit: 0
+  queueLimit: 0,
+  ...(sslCa ? {
+    ssl: {
+      ca: sslCa.replace(/\\n/g, '\n'),
+      rejectUnauthorized: true
+    }
+  } : {})
 });
 
 // Verify MySQL is reachable before allowing the HTTP server to listen.
