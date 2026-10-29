@@ -44,6 +44,20 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'FoodBoxx API is running' });
 });
 
+app.get('/api/health/db', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await pool.query({ sql: 'SELECT 1', timeout: 5000 });
+    return res.status(200).json({
+      status: 'healthy', database: 'connected', timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return res.status(503).json({
+      status: 'unhealthy', database: 'disconnected', timestamp: new Date().toISOString()
+    });
+  }
+});
+
 app.use('/api/auth', require('./server/routes/auth.routes'));
 // Simulated card payment endpoints.
 app.use('/api/payments', require('./server/routes/payment.routes'));
