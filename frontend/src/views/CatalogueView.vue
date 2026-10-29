@@ -72,6 +72,11 @@
           </div>
         </div>
 
+        <div v-else-if="loadError" class="empty-state" role="alert">
+          <p class="text-muted">The menu is temporarily unavailable. Please try again.</p>
+          <button class="btn btn--outline mt-4" @click="fetchProducts">Retry</button>
+        </div>
+
         <!-- EMPTY STATE -->
         <div v-else-if="filteredProducts.length === 0" class="empty-state">
           <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--color-navy)" stroke-width="1" class="mb-4 opacity-25">
@@ -122,6 +127,7 @@ const cartStore = useCartStore();
 const searchQuery = ref('');
 const activeFilters = ref([]);
 const isLoading = ref(false);
+const loadError = ref(false);
 
 const filteredProducts = computed(() => {
   let products = productStore.products;
@@ -155,10 +161,11 @@ const clearFilters = () => {
 
 const fetchProducts = async () => {
   isLoading.value = true;
+  loadError.value = false;
   try {
     await productStore.fetchProducts();
   } catch (error) {
-    showError('Failed to load products. Please refresh the page.');
+    loadError.value = true;
   } finally {
     isLoading.value = false;
   }

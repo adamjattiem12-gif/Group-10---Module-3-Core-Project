@@ -5,6 +5,7 @@ import Swal from 'sweetalert2'; // BANNED: alert()/confirm() must use SweetAlert
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -27,6 +28,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const requestUrl = error.config?.url || '';
+    if (!error.response && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.code === 'ERR_NETWORK')) {
+      error.message = 'The service is temporarily unavailable. Please check your connection and try again.';
+    }
     if (error.response && error.response.status === 401 && !requestUrl.includes('/auth/login') && !requestUrl.includes('/auth/register')) {
       // Token expired or invalid -> redirect to login
       delete window.__foodboxxToken;

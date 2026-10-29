@@ -1,7 +1,7 @@
 /*
   Purpose: MySQL connection-pool configuration | Module: config
   Owner: Adam | Created: 9 Sep 2026
-  Notes: Validates required database settings and verifies MySQL connectivity before server startup.
+  Notes: Validates required settings and creates a pool that connects on demand.
 */
 
 const mysql = require('mysql2/promise');
@@ -36,16 +36,5 @@ const pool = mysql.createPool({
     }
   } : {})
 });
-
-// Verify MySQL is reachable before allowing the HTTP server to listen.
-pool.ready = pool.getConnection()
-  .then(connection => {
-    connection.release();
-    console.log('MySQL connection pool is ready.');
-  })
-  .catch(error => {
-    console.error(`FATAL DATABASE CONNECTION ERROR: ${error.message}`);
-    process.exit(1);
-  });
 
 module.exports = pool;

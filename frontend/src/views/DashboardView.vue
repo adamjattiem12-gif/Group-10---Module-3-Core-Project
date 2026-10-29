@@ -13,6 +13,12 @@
       <!-- Page Title -->
       <h1 class="page-title mb-6">My Dashboard</h1>
 
+      <div v-if="loadError" class="dashboard-card p-6 mb-6" role="alert">
+        <p>Subscription details are temporarily unavailable. Please try again.</p>
+        <button class="btn btn--outline btn--sm" @click="loadSubscription">Retry</button>
+      </div>
+      <p v-else-if="isLoading" class="text-muted">Loading subscription details...</p>
+      <template v-else>
       <!-- Active Subscription Summary -->
       <div class="dashboard-card p-6 mb-6">
         <div class="d-flex justify-between align-center mb-4">
@@ -53,6 +59,7 @@
         </div>
         <p class="text-muted small mb-0">{{ subscription?.boxes_completed ?? 0 }} of 8 boxes completed — {{ 8 - (subscription?.boxes_completed ?? 0) }} more to go!</p>
       </div>
+      </template>
 
       <!-- Quick Links (Only Orders and Profile remain) -->
       <h3 class="quick-links-title mb-4">Quick Links</h3>
@@ -84,17 +91,24 @@ import api from '@/services/api';
 
 const authStore = useAuthStore();
 const subscription = ref(null);
+const isLoading = ref(true);
+const loadError = ref(false);
 const loyaltyPercent = computed(() => ((subscription.value?.boxes_completed ?? 0) / 8) * 100);
 
 // Load the authenticated user's subscription summary for the dashboard card.
-onMounted(async () => {
+const loadSubscription = async () => {
+  isLoading.value = true;
+  loadError.value = false;
   try {
     const response = await api.get('/subscriptions/user/' + authStore.user.id);
     subscription.value = response.data.subscription;
   } catch (error) {
-    subscription.value = null;
+    loadError.value = true;
+  } finally {
+    isLoading.value = false;
   }
-});
+};
+onMounted(loadSubscription);
 
 </script>
 

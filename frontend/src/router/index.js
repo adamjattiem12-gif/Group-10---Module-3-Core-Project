@@ -3,7 +3,7 @@
   Module: Frontend - Core Infrastructure
   Owner: Caleb Asia
   Created: 2026-08-31
-  Notes: Global guard forces ALL pages (except /login and /register) to require authentication.
+  Notes: Public home and authentication pages; account and ordering routes require authentication.
 */
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../store/authStore';
@@ -66,7 +66,7 @@ const routes = [
   },
 
   // PROTECTED ROUTES (Require authentication)
-  { path: '/', name: 'Home', component: HomeView, beforeEnter: requireAuth },
+  { path: '/', name: 'Home', component: HomeView },
   { path: '/menu', name: 'Catalogue', component: CatalogueView, beforeEnter: requireAuth },
   { path: '/product/:id', name: 'ProductDetail', component: ProductDetailView, beforeEnter: requireAuth },
   { path: '/cart', name: 'Cart', component: CartView, beforeEnter: requireAuth },
@@ -90,14 +90,13 @@ const router = createRouter({
   routes
 });
 
-// GLOBAL GUARD: Belt-and-suspenders. Even if a route forgets `requireAuth`,
-// this ensures non-authenticated users can never escape /login or /register.
+// Keep other routes protected even if a route forgets `requireAuth`.
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   const isAuthRoute = to.name === 'Login' || to.name === 'Register';
   const isPaymentReturn = to.name === 'Confirmation';
 
-  if (!authStore.isAuthenticated && !isAuthRoute && !isPaymentReturn) {
+  if (!authStore.isAuthenticated && !isAuthRoute && !isPaymentReturn && to.name !== 'Home') {
     // Not logged in and trying to leave the auth pages → redirect to login
     next({ name: 'Login', query: { redirect: to.fullPath } });
   } else if (authStore.isAuthenticated && isAuthRoute) {

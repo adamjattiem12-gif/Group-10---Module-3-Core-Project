@@ -60,7 +60,7 @@
       </div>
 
       <!-- Builder Content -->
-      <div v-if="currentItems.length > 0" class="builder-content">
+      <div v-if="!isLoading && !loadError && currentItems.length > 0" class="builder-content">
         
         <!-- Items Grid -->
         <div class="items-grid">
@@ -109,10 +109,15 @@
       </div>
 
       <!-- Loading State -->
-      <div v-else class="empty-state">
+      <div v-else-if="isLoading" class="empty-state">
         <div class="spinner spinner--lg spinner--orange mx-auto mb-4"></div>
         <p class="text-muted">Loading items...</p>
       </div>
+      <div v-else-if="loadError" class="empty-state" role="alert">
+        <p class="text-muted">Box items are temporarily unavailable. Please try again.</p>
+        <button class="btn btn--outline mt-4" @click="loadItems">Retry</button>
+      </div>
+      <div v-else class="empty-state"><p class="text-muted">No items are available right now.</p></div>
 
     </div>
   </div>
@@ -131,6 +136,20 @@ const cartStore = useCartStore();
 
 const currentType = ref('meal');
 const selectedItems = ref([]); 
+const isLoading = ref(true);
+const loadError = ref(false);
+
+const loadItems = async () => {
+  isLoading.value = true;
+  loadError.value = false;
+  try {
+    await productStore.fetchBuilderItems();
+  } catch (error) {
+    loadError.value = true;
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 const currentItems = computed(() => {
   return productStore.builderItems.filter(item => item.category === currentType.value);
@@ -183,7 +202,7 @@ const addCustomBoxToCart = () => {
 };
 
 onMounted(async () => {
-  await productStore.fetchBuilderItems();
+  loadItems();
 
   const savedType = sessionStorage.getItem('builder_type');
   if (savedType) {

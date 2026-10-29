@@ -17,12 +17,18 @@
           <h1 class="page-title">My Subscription</h1>
           <p class="page-intro">Good food, ready when your week gets busy.</p>
         </div>
-        <div class="heading-badge" :class="{ 'badge--paused': status === 'paused', 'badge--cancelled': status === 'cancelled' }">
+        <div v-if="!subscriptionLoading && !subscriptionError" class="heading-badge" :class="{ 'badge--paused': status === 'paused', 'badge--cancelled': status === 'cancelled' }">
           <span class="status-dot"></span>
           <span>{{ statusBadgeText }}</span>
         </div>
       </div>
 
+      <div v-if="subscriptionError" class="subscription-card" role="alert">
+        <p>Subscription details are temporarily unavailable. Please try again.</p>
+        <button class="btn btn--outline" @click="loadSubscription">Retry</button>
+      </div>
+      <p v-else-if="subscriptionLoading" class="text-muted">Loading subscription details...</p>
+      <template v-else>
       <div class="subscription-stats" aria-label="Subscription overview">
         <div class="stat-card">
           <span class="stat-icon">↗</span>
@@ -163,6 +169,7 @@
           </button>
         </div>
       </div>
+      </template>
 
     </div>
   </div>
@@ -188,6 +195,8 @@ const productPrice = ref(null);
 const productLoading = ref(false);
 const productError = ref('');
 const subscription = ref(null);
+const subscriptionLoading = ref(true);
+const subscriptionError = ref(false);
 
 // --- COMPUTED VALUES (Dynamic!) ---
 const availableBoxes = computed(() => productStore.products.filter(product => product.category === 'box'));
@@ -237,6 +246,7 @@ const authStore = useAuthStore();
 
 // Load the current subscription state before enabling lifecycle actions.
 onMounted(async () => {
+  loadSubscription();
   productLoading.value = true;
   try {
     await productStore.fetchProducts();
@@ -245,7 +255,11 @@ onMounted(async () => {
   } finally {
     productLoading.value = false;
   }
+});
 
+const loadSubscription = async () => {
+  subscriptionLoading.value = true;
+  subscriptionError.value = false;
   try {
     const response = await api.get('/subscriptions/user/' + authStore.user.id);
     const loadedSubscription = response.data.subscription;
@@ -258,9 +272,11 @@ onMounted(async () => {
     productPrice.value = loadedSubscription.product_price;
     currentBoxId.value = loadedSubscription.product_id;
   } catch (error) {
-    // Preserve the existing defaults when the subscription cannot be loaded.
+    subscriptionError.value = true;
+  } finally {
+    subscriptionLoading.value = false;
   }
-});
+};
 
 const handleAction = async (action) => {
   if (!subscriptionId.value) {

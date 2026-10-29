@@ -56,7 +56,7 @@ export const useAuthStore = defineStore('auth', () => {
       persistSession(payload.token, payload.user);
       return { success: true, user: payload.user, token: payload.token };
     } catch (error) {
-      const message = error?.response?.data?.error?.message || 'Login failed.';
+      const message = error?.response?.data?.error?.message || error?.message || 'Login failed.';
       return { success: false, message };
     }
   }

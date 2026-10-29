@@ -98,6 +98,10 @@
         </div>
       </div>
 
+      <div v-else-if="loadError" class="empty-state" role="alert">
+        <p class="text-muted">Product details are temporarily unavailable. Please try again.</p>
+        <button class="btn btn--outline mt-4" @click="loadProduct">Retry</button>
+      </div>
       <div v-else class="empty-state">
         <p class="text-muted">Loading product details...</p>
       </div>
@@ -111,7 +115,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProductStore } from '@/store/productStore';
 import { useCartStore } from '@/store/cartStore';
-import { showError, showSuccess } from '@/services/ui';
+import { showSuccess } from '@/services/ui';
 import { Star } from 'lucide-vue-next';
 import { getProductDetails } from '@/services/productDetails';
 
@@ -122,6 +126,7 @@ const cartStore = useCartStore();
 
 const openAccordion = ref('nutrition');
 const isBuilderMode = ref(false);
+const loadError = ref(false);
 
 const product = computed(() => productStore.selectedProduct);
 const details = computed(() => getProductDetails(product.value?.id));
@@ -165,14 +170,18 @@ const handleItemAction = () => {
   }
 };
 
-onMounted(async () => {
-  isBuilderMode.value = sessionStorage.getItem('builder_context') === 'true';
-
+const loadProduct = async () => {
+  loadError.value = false;
   try {
     await productStore.fetchProductById(route.params.id);
   } catch (error) {
-    showError('Failed to load product details.');
+    loadError.value = true;
   }
+};
+
+onMounted(() => {
+  isBuilderMode.value = sessionStorage.getItem('builder_context') === 'true';
+  loadProduct();
 });
 
 onBeforeUnmount(() => {

@@ -98,11 +98,9 @@ app.get('/{*splat}', (req, res) => {
 
 app.use(require('./server/middleware/error.middleware'));
 
-// Do not accept requests until the required database connection has been verified.
-pool.ready.then(() => {
-  app.listen(PORT, () => {
-    console.log(`FoodBoxx API running at http://localhost:${PORT}`);
-  });
+// Serve the frontend and health endpoints independently of database availability.
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`FoodBoxx API listening on port ${PORT}`);
 });
 
 async function shutdown(signal) {
